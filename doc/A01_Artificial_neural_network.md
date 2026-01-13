@@ -265,3 +265,10 @@ $$\theta_{t+1} = \theta_t - \eta \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsi
 因为神经网络是由多层堆叠而成，前一层的输出是后一层的输入，因此，反向传播算法的思路是，从输出层开始，计算输出层到隐藏层的梯度，然后，逐层逆向从后往前计算梯度。实际上就是可以视为复合函数求导的过程，前一层的参数求导需要用到后一层的参数求导结果，后一层参数求导相当于前一层参数的内函数求导。
 
 ## 3. 代码实现
+[Demo练习](../notebook/A01_Artificial_neural_network/pytorch_quickstart.ipynb)来自于pytorch官方文档的[quickstart](https://docs.pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html)示例代码，展示了使用包含三个线性层的神经网络进行图像分类的例子。这个例子包含了训练、测试、保存和加载模型等步骤：
++ 构建train和test的dataset和dataloader
++ 构建模型，三个线性层，使用relu激活函数
++ 构建损失函数（cross entropy loss）和优化器 （Adam）
++ 训练模型，使用训练集进行训练，使用测试集进行测试
++ 保存模型
++ 加载模型并预测
