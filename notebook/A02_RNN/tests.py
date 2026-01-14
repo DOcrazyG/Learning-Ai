@@ -77,7 +77,7 @@ def test_decoder():
         ).to(config.device)
         state = encoder(eng_tensors)
         decoder.init_state(state)
-        output, hn = decoder(fra_tensors, state)
+        output, (_, hn) = decoder(fra_tensors, state)
         print(f"decoder.output.shape:{output.shape}")
         print(f"decoder.hn.shape:{hn.shape}")
         break

@@ -58,7 +58,6 @@ class Decoder(nn.Module):
         encoder_output, hn = state
         # context: [batch_size, 1, ec_hidden_size]
         context = encoder_output[:, -1:, :]
-        print(f"context:{context.shape}")
         # broadcast context to [batch_size, ec_seq_len, hidden_size]
         context = context.expand(-1, embeds.size(1), -1)
         embeds_and_context = torch.cat((embeds, context), dim=-1)
@@ -68,4 +67,18 @@ class Decoder(nn.Module):
         output, hidden = self.rnn(embeds_and_context, hn)
         # output: [batch_size, seq_len, vocab_size]
         output = self.fc(output)
-        return output, hidden
+        return output, (encoder_output, hidden)
+
+
+class Seq2Seq(nn.Module):
+    def __init__(self, encoder, decoder):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def forward(self, eng_tensor, fra_tensor):
+        state = self.encoder(eng_tensor)
+        self.decoder.init_state(state)
+        output, _ = self.decoder(fra_tensor, state)
+        # output: [batch_size, seq_len, vocab_size]
+        return output
