@@ -9,17 +9,17 @@ class DataProcessor(object):
     datas: List[List[str]] = []
 
     eng_vacab_length: int = 4
-    eng_word2idx: Dict[str, int] = {"<SOS>": 0, "<EOS>": 1, "<PAD>": 2, "<UNK>": 3}
+    eng_word2idx: Dict[str, int] = {"<BOS>": 0, "<EOS>": 1, "<PAD>": 2, "<UNK>": 3}
     eng_idx2word: Dict[int, str] = {}
 
     fra_vacab_length: int = 4
-    fra_word2idx: Dict[str, int] = {"<SOS>": 0, "<EOS>": 1, "<PAD>": 2, "<UNK>": 3}
+    fra_word2idx: Dict[str, int] = {"<BOS>": 0, "<EOS>": 1, "<PAD>": 2, "<UNK>": 3}
     fra_idx2word: Dict[int, str] = {}
 
     def __init__(self, file_path: str):
         self.file_path = file_path
 
-    def _normalize_text(self, text):
+    def _normalize_text(self, text: str) -> str:
         text = text.lower().strip()
         # replace non-breaking spaces with a single space
         text = text.replace("\u202f", " ").replace("\xa0", " ")
@@ -57,7 +57,11 @@ class DataProcessor(object):
 
 
 if __name__ == "__main__":
-    data_processor = DataProcessor("data/fra.txt")
+    from config import Config
+
+    config = Config()
+
+    data_processor = DataProcessor(config.file_path)
     data_processor.run()
     print(f"datas_length:{len(data_processor.datas)}")
     print(f"eng_vacab_length:{data_processor.eng_vacab_length}")
