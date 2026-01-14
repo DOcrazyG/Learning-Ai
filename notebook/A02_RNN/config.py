@@ -8,5 +8,9 @@ class Config:
         if torch.accelerator.is_available()
         else "cpu"
     )
-    max_len = 40
-    batch_size = 64
+    batch_size = 32
+
+    # rnn hyperparameters
+    embed_size = 64
+    hidden_size = 128
+    num_layers = 1
