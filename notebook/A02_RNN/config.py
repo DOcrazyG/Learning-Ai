@@ -14,3 +14,7 @@ class Config:
     embed_size = 64
     hidden_size = 128
     num_layers = 1
+
+    # train
+    epochs = 10
+    lr = 0.001

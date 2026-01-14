@@ -14,22 +14,23 @@ class Encoder(nn.Module):
             embed_size, hidden_size, num_layers=num_layers, batch_first=True
         )
 
-    def init_hidden(self):
-        return torch.zeros(
-            config.num_layers,
-            config.batch_size,
-            config.hidden_size,
-            device=config.device,
-        )
-
     def forward(self, eng_tensor, hidden=None):
         # eng_tensor: [batch_size, seq_len]
         # embeds: [batch_size, seq_len, embed_size]
         embeds = self.embedding(eng_tensor)
+        
+        # Dynamically determine batch size from input
+        batch_size = embeds.size(0)
+        if hidden is None:
+            hidden = torch.zeros(
+                self.rnn.num_layers,
+                batch_size,
+                self.rnn.hidden_size,
+                device=eng_tensor.device,
+            )
+            
         # output: [batch_size, seq_len, hidden_size]
         # hidden: [num_layers, batch_size, hidden_size]
-        if hidden is None:
-            hidden = self.init_hidden()
         output, hidden = self.rnn(embeds, hidden)
         return output, hidden
 
@@ -46,9 +47,6 @@ class Decoder(nn.Module):
             batch_first=True,
         )
         self.fc = nn.Linear(hidden_size, vocab_size)
-
-    def init_state(self, encoder_outputs, *args):
-        return encoder_outputs
 
     def forward(self, fra_tensor, state):
         # embeds: [batch_size, dc_seq_len, dc_embed_size]
@@ -77,8 +75,7 @@ class Seq2Seq(nn.Module):
         self.decoder = decoder
 
     def forward(self, eng_tensor, fra_tensor):
-        state = self.encoder(eng_tensor)
-        self.decoder.init_state(state)
-        output, _ = self.decoder(fra_tensor, state)
+        encoder_output, hidden = self.encoder(eng_tensor)
+        output, _ = self.decoder(fra_tensor, (encoder_output, hidden))
         # output: [batch_size, seq_len, vocab_size]
         return output
