@@ -4,7 +4,7 @@ from data_preprocess import (
     Eng2FraDataset,
     build_dataloader,
 )
-from models import Encoder
+from models import Decoder, Encoder
 
 config = Config()
 
@@ -52,8 +52,34 @@ def test_encoder():
     ).to(config.device)
     for eng_tensors, _ in dataloader:
         output, hidden = encoder(eng_tensors)
-        print(f"output.shape:{output.shape}")
-        print(f"hidden.shape:{hidden.shape}")
+        print(f"encoder.output.shape:{output.shape}")
+        print(f"encoder.hidden.shape:{hidden.shape}")
+        break
+
+
+def test_decoder():
+    data_processor = DataProcessor(config.file_path)
+    data_processor.run()
+    dataset = Eng2FraDataset(data_processor)
+    dataloader = build_dataloader(dataset)
+    for eng_tensors, fra_tensors in dataloader:
+        encoder = Encoder(
+            vocab_size=data_processor.eng_vacab_length,
+            embed_size=config.embed_size,
+            hidden_size=config.hidden_size,
+            num_layers=config.num_layers,
+        ).to(config.device)
+        decoder = Decoder(
+            vocab_size=data_processor.fra_vacab_length,
+            embed_size=config.embed_size,
+            hidden_size=config.hidden_size,
+            num_layers=config.num_layers,
+        ).to(config.device)
+        state = encoder(eng_tensors)
+        decoder.init_state(state)
+        output, hn = decoder(fra_tensors, state)
+        print(f"decoder.output.shape:{output.shape}")
+        print(f"decoder.hn.shape:{hn.shape}")
         break
 
 
@@ -65,3 +91,5 @@ if __name__ == "__main__":
     test_dataloader()
     print("-" * 60)
     test_encoder()
+    print("-" * 60)
+    test_decoder()

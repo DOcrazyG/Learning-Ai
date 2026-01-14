@@ -85,7 +85,7 @@ class Eng2FraDataset(Dataset):
         eng_words = eng_sentence.split(" ")
         eng_words.append("<EOS>")
         fra_words = fra_sentence.split(" ")
-        fra_words = ["<BOS>"] + fra_words
+        fra_words = ["<BOS>"] + fra_words  # use for teacher forcing
         fra_words.append("<EOS>")
 
         eng_idxs = [self.data_processor.eng_word2idx[word] for word in eng_words]
