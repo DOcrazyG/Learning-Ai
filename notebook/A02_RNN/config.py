@@ -18,3 +18,6 @@ class Config:
     # train
     epochs = 10
     lr = 0.001
+
+    # predict
+    max_len = 50
