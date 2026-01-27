@@ -75,21 +75,20 @@ def test_decoder():
             hidden_size=config.hidden_size,
             num_layers=config.num_layers,
         ).to(config.device)
-        state = encoder(eng_tensors)
-        decoder.init_state(state)
-        output, (_, hn) = decoder(fra_tensors, state)
+        _, hn = encoder(eng_tensors)
+        output, hn = decoder(fra_tensors, hn)
         print(f"decoder.output.shape:{output.shape}")
         print(f"decoder.hn.shape:{hn.shape}")
         break
 
 
 if __name__ == "__main__":
-    test_dataprocessor()
-    print("-" * 60)
-    test_dataset()
-    print("-" * 60)
-    test_dataloader()
-    print("-" * 60)
-    test_encoder()
-    print("-" * 60)
+    # test_dataprocessor()
+    # print("-" * 60)
+    # test_dataset()
+    # print("-" * 60)
+    # test_dataloader()
+    # print("-" * 60)
+    # test_encoder()
+    # print("-" * 60)
     test_decoder()

@@ -11,13 +11,13 @@ class Config:
     batch_size = 32
 
     # rnn hyperparameters
-    embed_size = 64
-    hidden_size = 128
+    embed_size = 128
+    hidden_size = 256
     num_layers = 1
 
     # train
-    epochs = 10
-    lr = 0.001
+    epochs = 50
+    lr = 5e-4
 
     # predict
     max_len = 50
