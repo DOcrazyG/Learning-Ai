@@ -26,7 +26,7 @@ def init_model(config, src_vocab_size, tgt_vocab_size):
     return model
 
 
-def train_one_epoch(model, dataloader, optimizer, criterion, epoch_idx):
+def train_one_epoch(model, dataloader, optimizer, criterion, epoch_idx, teacher_forcing_ratio=0.5):
     model.train()
     total_loss = 0
     for batch_idx, (eng_tensors, fra_tensors) in enumerate(dataloader):
@@ -46,7 +46,7 @@ def train_one_epoch(model, dataloader, optimizer, criterion, epoch_idx):
         decoder_target = fra_tensors[:, 1:]
         seq_length = decoder_target.size(1)
 
-        # Teacher forcing is not used - use predicted token as next input
+        # Use teacher forcing for training
         for t in range(seq_length):
             # Forward pass through decoder
             decoder_output, hidden = model.decoder(decoder_input, hidden)
@@ -55,11 +55,15 @@ def train_one_epoch(model, dataloader, optimizer, criterion, epoch_idx):
             loss = criterion(decoder_output, decoder_target[:, t].long())
             batch_loss += loss
 
-            # Get predicted token (greedy decoding)
-            predicted_token = torch.argmax(decoder_output, dim=-1).unsqueeze(1)
-
-            # Use predicted token as next input
-            decoder_input = predicted_token
+            # Decide whether to use teacher forcing or not
+            use_teacher_forcing = torch.rand(1).item() < teacher_forcing_ratio
+            if use_teacher_forcing:
+                # Use actual target token as next input
+                decoder_input = decoder_target[:, t].unsqueeze(1)
+            else:
+                # Use predicted token as next input (greedy decoding)
+                predicted_token = torch.argmax(decoder_output, dim=-1).unsqueeze(1)
+                decoder_input = predicted_token
 
         # Backward pass and optimization
         batch_loss = batch_loss / seq_length

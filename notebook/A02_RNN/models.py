@@ -11,7 +11,7 @@ class Encoder(nn.Module):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, embed_size)
-        self.rnn = nn.RNN(embed_size, hidden_size, num_layers=num_layers, batch_first=True)
+        self.rnn = nn.LSTM(embed_size, hidden_size, num_layers=num_layers, batch_first=True)
 
     def forward(self, eng_tensor, hidden=None):
         # eng_tensor: [batch_size, seq_len]
@@ -21,15 +21,23 @@ class Encoder(nn.Module):
         # Dynamically determine batch size from input
         batch_size = embeds.size(0)
         if hidden is None:
-            hidden = torch.zeros(
-                self.rnn.num_layers,
-                batch_size,
-                self.rnn.hidden_size,
-                device=eng_tensor.device,
+            hidden = (
+                torch.zeros(
+                    self.rnn.num_layers,
+                    batch_size,
+                    self.rnn.hidden_size,
+                    device=eng_tensor.device,
+                ),
+                torch.zeros(
+                    self.rnn.num_layers,
+                    batch_size,
+                    self.rnn.hidden_size,
+                    device=eng_tensor.device,
+                )
             )
 
         # output: [batch_size, seq_len, hidden_size]
-        # hidden: [num_layers, batch_size, hidden_size]
+        # hidden: (h, c) where h and c are [num_layers, batch_size, hidden_size]
         output, hidden = self.rnn(embeds, hidden)
         return output, hidden
 
@@ -39,7 +47,7 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, embed_size)
-        self.rnn = nn.RNN(
+        self.rnn = nn.LSTM(
             embed_size,
             hidden_size,
             num_layers=num_layers,
@@ -53,9 +61,9 @@ class Decoder(nn.Module):
         embeds = self.embedding(fra_tensor)
         embeds = F.relu(embeds)
         # output: [batch_size, seq_len, vocab_size]
-        # hidden: [num_layers, batch_size, hidden_size]
+        # hidden: (h, c) where h and c are [num_layers, batch_size, hidden_size]
         output, hidden = self.rnn(embeds, hidden)
-        output = self.fc(output[0])
+        output = self.fc(output.squeeze(1))
         output = self.softmax(output)
         return output, hidden
 
