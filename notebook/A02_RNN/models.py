@@ -11,9 +11,7 @@ class Encoder(nn.Module):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, embed_size)
-        self.rnn = nn.RNN(
-            embed_size, hidden_size, num_layers=num_layers, batch_first=True
-        )
+        self.rnn = nn.RNN(embed_size, hidden_size, num_layers=num_layers, batch_first=True)
 
     def forward(self, eng_tensor, hidden=None):
         # eng_tensor: [batch_size, seq_len]
@@ -70,6 +68,5 @@ class Seq2Seq(nn.Module):
 
     def forward(self, eng_tensor, fra_tensor):
         _, hidden = self.encoder(eng_tensor)
-        output, _ = self.decoder(fra_tensor, hidden)
-        # output: [batch_size, seq_len, vocab_size]
-        return output
+        output, hidden = self.decoder(fra_tensor, hidden)
+        return output, hidden

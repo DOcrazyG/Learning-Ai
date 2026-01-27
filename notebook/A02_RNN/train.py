@@ -30,20 +30,46 @@ def train_one_epoch(model, dataloader, optimizer, criterion, epoch_idx):
     model.train()
     total_loss = 0
     for batch_idx, (eng_tensors, fra_tensors) in enumerate(dataloader):
-        decoder_input = fra_tensors[:, :-1]  # remove <EOS>
-        decoder_target = fra_tensors[:, 1:]  # remove <BOS>
-        outputs = model(eng_tensors, decoder_input)
-
-        loss = criterion(
-            outputs.reshape(-1, outputs.size(-1)), decoder_target.reshape(-1).long()
-        )
-        loss.backward()
-        optimizer.step()
         optimizer.zero_grad()
-        total_loss += loss.item()
+        batch_loss = 0
+
+        # Get batch size
+        batch_size = eng_tensors.size(0)
+
+        # Encode the input sequence
+        _, hidden = model.encoder(eng_tensors)
+
+        # Initialize decoder input with <BOS> token (index 0)
+        decoder_input = torch.tensor([[0] for _ in range(batch_size)], device=eng_tensors.device, dtype=torch.long)
+
+        # Get target sequence (remove <BOS>)
+        decoder_target = fra_tensors[:, 1:]
+        seq_length = decoder_target.size(1)
+
+        # Teacher forcing is not used - use predicted token as next input
+        for t in range(seq_length):
+            # Forward pass through decoder
+            decoder_output, hidden = model.decoder(decoder_input, hidden)
+
+            # Calculate loss for this time step
+            loss = criterion(decoder_output, decoder_target[:, t].long())
+            batch_loss += loss
+
+            # Get predicted token (greedy decoding)
+            predicted_token = torch.argmax(decoder_output, dim=-1).unsqueeze(1)
+
+            # Use predicted token as next input
+            decoder_input = predicted_token
+
+        # Backward pass and optimization
+        batch_loss = batch_loss / seq_length
+        batch_loss.backward()
+        optimizer.step()
+
+        total_loss += batch_loss.item()
 
         if batch_idx % 100 == 0:
-            print(f"Epoch: {epoch_idx}, Batch: {batch_idx}, Loss: {loss.item():.4f}")
+            print(f"Epoch: {epoch_idx}, Batch: {batch_idx}, Loss: {batch_loss.item():.4f}")
 
     avg_loss = total_loss / len(dataloader)
     return avg_loss
@@ -61,16 +87,12 @@ def train(config):
     print(f"English vocabulary size: {data_processor.eng_vacab_length}")
     print(f"French vocabulary size: {data_processor.fra_vacab_length}")
     print("Initializing model...")
-    model = init_model(
-        config, data_processor.eng_vacab_length, data_processor.fra_vacab_length
-    )
+    model = init_model(config, data_processor.eng_vacab_length, data_processor.fra_vacab_length)
 
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss(ignore_index=2)  # ignore <PAD>
 
-    print(
-        f"Model initialized. Total parameters: {sum(p.numel() for p in model.parameters())}"
-    )
+    print(f"Model initialized. Total parameters: {sum(p.numel() for p in model.parameters())}")
 
     best_train_loss = float("inf")
     patience_counter = 0
@@ -92,9 +114,7 @@ def train(config):
 
         # early stopping
         if patience_counter >= patience:
-            print(
-                f"Early stopping triggered after {patience} epochs without improvement"
-            )
+            print(f"Early stopping triggered after {patience} epochs without improvement")
             break
 
     print("Training completed!")

@@ -70,7 +70,7 @@ class Predictor:
         """Predict French translation for English input"""
         with torch.no_grad():
             input_tensor = self.preprocess_input(english_input)
-            encoder_output, hidden = self.encoder(input_tensor)
+            _, hidden = self.encoder(input_tensor)
             decoder_input = torch.tensor(
                 [[self.data_processor.fra_word2idx["<BOS>"]]],
                 device=self.device,
@@ -80,15 +80,10 @@ class Predictor:
             output_tokens = []
             max_length = config.max_len  # Maximum length of output sequence
             for _ in range(max_length):
-                decoder_output, (encoder_output, hidden) = self.decoder(
-                    decoder_input, (encoder_output, hidden)
-                )
+                decoder_output, hidden = self.decoder(decoder_input, hidden)
 
-                # Get the next word prediction (take the last output in sequence)
-                print("predicted_token: ", decoder_output.shape)
-                word_probs = decoder_output[:, -1, :]  # Take the last time step
-                print("word_probs: ", word_probs.shape)
-                predicted_token = torch.argmax(word_probs, dim=-1).unsqueeze(1)
+                # Get the next word prediction
+                predicted_token = torch.argmax(decoder_output, dim=-1).unsqueeze(1)
 
                 # Add to output sequence
                 token_id = predicted_token.squeeze().item()
